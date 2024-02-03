@@ -9,7 +9,18 @@ dotenv.config({
     path:'./env'
 })
 connectDB()
+//connectDB returns promise that is listened here by then and catch
+.then(()=>{
+    app.listen(process.env.PORT || 8000,()=>{
+        console.log(`Server is running at port : ${process.env.PORT}`);
+    });
+})
+.catch((err)=>{
+    console.log("MongoDB connection failed !!!",err);
+})
 
+
+// alternate way to connect to db is given i.e by writing in index.js itself directly
 /*
 import express from "express"
 const app = express()
