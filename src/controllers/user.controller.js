@@ -25,17 +25,17 @@ const registerUser = asyncHandler(async(req,res)=>{
     // return response
   
 // get user details from frontend
-    const {fullName,email,username,password} = req.body
+    const {fullname,email,username,password} = req.body
     console.log("email : ",email);
 
 // validation 
 
-    // if (fullName === "") {
+    // if (fullname === "") {
     //     throw new ApiError(400,"fullname is required")
     // } like this u can write if else condition for each validation
 
     if(
-        [fullName,email,username,password].some((field)=>field?.trim() === ""
+        [fullname,email,username,password].some((field)=>field?.trim() === ""
         )
     )
     {
@@ -44,7 +44,7 @@ const registerUser = asyncHandler(async(req,res)=>{
 
 // check if user already exist or not - using username and email
   
-  const existedUser = User.findOne({
+  const existedUser = await User.findOne({
     $or: [{ username },{ email }]
   }) 
 
@@ -54,10 +54,15 @@ const registerUser = asyncHandler(async(req,res)=>{
   }
 
 // check for images,check for avatar(required)
-    
+    console.log(req.files);
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    // const coverImageLocalPath = req.files?.coverImage[0]?.path;
 
+    let coverImageLocalPath;
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length>0){
+        coverImageLocalPath = req.files.coverImage[0].path
+    }
+    
     if(!avatarLocalPath)
     {
         throw new ApiError(400,"Avatar file is required")
@@ -67,6 +72,7 @@ const registerUser = asyncHandler(async(req,res)=>{
     const avatar = await uploadOnCloudinary(avatarLocalPath)
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
+    
     if(!avatar)
     {
         throw new ApiError(400,"Avatar file is required")
@@ -75,7 +81,7 @@ const registerUser = asyncHandler(async(req,res)=>{
 // after this create a object of user class - create entry in database    
 
     const user = await User.create({
-        fullName,
+        fullname,
         avatar:avatar.url,
         coverImage:coverImage?.url || "",
         email,
