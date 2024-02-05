@@ -27,4 +27,16 @@ app.use(cookieParser())//for accesing cookie
 
 //the above middle ware we are using
 
+
+
+
+// routes import
+import userRouter from "./routes/user.routes.js"
+
+// routes declaration
+app.use("/api/v1/users",userRouter)
+
+//how is it called
+// http://localhost:8000/api/v1/users/register
+
 export {app}

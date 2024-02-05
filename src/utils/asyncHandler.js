@@ -1,7 +1,7 @@
 // SINCE WE WILL USE THE async await function in many place therefore we use  a wrapper utility to be used everywhere with ease
 
 const asyncHandler = (requestHandler)=>{
-    (req,res,next)=>{
+    return (req,res,next)=>{
         Promise.resolve(requestHandler(req,res,next)).catch((err) => next(err))
     }
 
