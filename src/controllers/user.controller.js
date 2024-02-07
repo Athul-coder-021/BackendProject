@@ -3,6 +3,25 @@ import {ApiError} from "../utils/ApiError.js"
 import {User} from "../models/user.model.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
+
+const generateAccessAndRefreshTokens = async(userId)=>{
+    try{
+        const user = await User.findById(userId)
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken()
+
+        //you need to put refreshToken in database so that every time you don't need to ask for password
+        user.refreshToken = refreshToken
+        await user.save({validateBeforeSave:false})
+
+        return {accessToken,refreshToken}
+    }
+    catch(error)
+    {
+        throw new ApiError(500,"Something went wrong while generating refres and acccess token")
+    }
+}
+
 const registerUser = asyncHandler(async(req,res)=>{
     /* 
     THIS WAS JUST FOR TESTING THE ROUTE
@@ -106,4 +125,93 @@ const registerUser = asyncHandler(async(req,res)=>{
     )
 })
 
-export {registerUser}
+
+const loginUser = asyncHandler(async(req,res)=>{
+    //req body->data
+    //username or email
+    // find the user
+    //password check 
+    //make access and refresh token
+    // send cookie
+
+    const {email,username,password} = req.body
+
+    if(!(username || email))
+    {
+        throw new ApiError(400,"username or email is required")
+    }
+
+    const user = await User.findOne({
+        $or: [{username},{email}]
+    })
+
+    if(!user)
+    {
+        throw new ApiError(404,"User does not exist")
+    }
+
+    const isPassowrdValid= await user.isPasswordCorrect(password)
+
+    if(!isPassowrdValid)
+    {
+        throw new ApiError(401,"Invalid user credentials")
+    }
+
+    const {accessToken,refreshToken} = await generateAccessAndRefreshTokens(user._id)
+
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
+
+    // cookies bhejo
+
+    const options = {
+        httpOnly:true,// cookies can be changed now only from server not from front end.
+        secure:true
+    }
+
+    return res.status(200)
+    .cookie("accessToken",accessToken,options)
+    .cookie("refreshToken",refreshToken,options)
+    .json(
+        new ApiResponse(
+            200,
+            {
+                user:loggedInUser,accessToken,refreshToken//user apne server mai set karna chah rha ho ,isliye ham usko alag se bhej rhe hai incase loggedInUser can't provide that
+            },
+            "User logged In Successfully"
+
+        )
+    )
+})
+
+const logOutUser = asyncHandler(async(req,res)=>{
+    // how will we select the user
+    // we can't use the id as we cannot ask user to enter his or her id for loggin out  
+    // Otherwise he can logout anyone he wishes
+    // To avoid this problem we will be using middlewares
+
+    await User.findByIdAndUpdate(
+         req.user._id,
+        {
+            $set:{
+                refreshToken:undefined
+            }
+        },
+        {
+            new:true
+        }
+    )
+
+    const options = {
+        httpOnly:true,// cookies can be changed now only from server not from front end.
+        secure:true
+    }
+
+    return res
+    .status(200)
+    .clearCookie("accessToken",options)
+    .clearCookie("refreshToken",options)
+    .json(
+        new ApiResponse(200,{},"User logged out")
+    )
+})
+export {registerUser,loginUser,logOutUser}
