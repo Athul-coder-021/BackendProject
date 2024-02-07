@@ -257,7 +257,7 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
             new ApiResponse(
                 200,
                 {accessToken,refreshToken:newRefreshToken},
-                "Access token refreshedn"
+                "Access token refreshed"
             )
         )
     } catch (error) {
