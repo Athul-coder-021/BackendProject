@@ -287,7 +287,7 @@ const changeCurrentPassword = asyncHandler(async(req,res)=>{
 
 const getCurrentUser = asyncHandler(async(req,res)=>{
     return res.status(200)
-    .json(200,req.user,"current user fetched")
+    .json(new ApiResponse(200,req.user,"current user fetched"))
     // we can get current user from auth middleware 
     // as auth middleware is already used therefore we get current user already.
 })
@@ -300,7 +300,7 @@ const updateAccountDetails=asyncHandler(async(req,res)=>{
         throw new ApiError(400,"All fields are required")
     }
 
-    const user = User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set:{
@@ -323,6 +323,9 @@ const updateAccountDetails=asyncHandler(async(req,res)=>{
 
 
 const updateUserAvatar = asyncHandler(async(req,res)=>{
+
+    // need to add : remove the old image after uploading the new image
+    // first store the old image url and the after everything goes successfully remove the old image from cloudinary
     const avatarLocalPath = req.file?.path
 
     if(!avatarLocalPath)
@@ -358,6 +361,9 @@ const updateUserAvatar = asyncHandler(async(req,res)=>{
 })
 
 const updateUserCoverImgae = asyncHandler(async(req,res)=>{
+
+    // need to add : remove the old image after uploading the new image
+    // first store the old image url and the after everything goes successfully remove the old image from cloudinary
     const coverImageLocalPath = req.file?.path
 
     if(!coverImageLocalPath)
